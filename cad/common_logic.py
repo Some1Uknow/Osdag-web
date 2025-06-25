@@ -171,6 +171,7 @@ class CommonDesignLogic(object):
         self.display = display
         self.mainmodule = mainmodule
         self.connection = connection
+        self.module_class = mainmodule
         print(self.connection)
 
 
@@ -684,6 +685,7 @@ class CommonDesignLogic(object):
         '''
         
         B = self.module_class
+
         if self.connection == KEY_DISP_BEAMCOVERPLATE:
             # B = BeamCoverPlate()
             # beam_data = self.fetchBeamPara()  # Fetches the beam dimensions
@@ -1703,7 +1705,7 @@ class CommonDesignLogic(object):
         return tensionCAD
 
     def display_3DModel(self, component, bgcolor):
-
+        print("Display 3D Model")
         self.component = component
 
         self.display.EraseAll()
@@ -2015,8 +2017,11 @@ class CommonDesignLogic(object):
 
         else:
             if self.connection == KEY_DISP_TENSION_BOLTED:
+                print("commonlogic.py: Tension Bolted Connection Display")
                 self.T = self.module_class()
+                print("commonlogic.py: Tension Bolted Connection Display", self.T.sec_profile)
                 self.TObj = self.createTensionCAD()
+                print("commonlogic.py: Tension Bolted Connection Display", self.TObj.sec_profile)
 
                 member = self.TObj.get_members_models()
                 plate = self.TObj.get_plates_models()
@@ -2303,7 +2308,7 @@ class CommonDesignLogic(object):
                         final_model = self.CPObj.get_only_beams_Models()
                     else:
                         final_model = self.CPObj.get_beam_models()
-                elif self.component == "Connector":
+                elif self.component == "Connector":                    
                     if self.connection == KEY_DISP_BEAMCOVERPLATE:
                         cadlist = [self.CPObj.get_flangewebplatesModel(), self.CPObj.get_nut_bolt_arrayModels()]
                         if B.preference != 'Outside':
@@ -2311,7 +2316,7 @@ class CommonDesignLogic(object):
                     else:
                         cadlist = [self.CPObj.get_plate_models(), self.CPObj.get_welded_modules()]
                 else:
-                    cadlist = self.CPObj.get_models()
+                    final_model = self.CPObj.get_models()
 
             elif self.connection == KEY_DISP_BB_EP_SPLICE:
 
@@ -2353,7 +2358,7 @@ class CommonDesignLogic(object):
                     else:
                         cadlist = [self.CPObj.get_plate_models(), self.CPObj.get_welded_modules()]
                 else:
-                    cadlist = self.CPObj.get_models()
+                    final_model = self.CPObj.get_models()
 
             elif self.connection == KEY_DISP_COLUMNENDPLATE:
                 if self.component == "Column":
@@ -2389,19 +2394,15 @@ class CommonDesignLogic(object):
                 else:
                     # print(type(self.TObj.shape))
                     final_model = self.TObj.shape
-                    # cadlist = self.TObj.get_models() #TODO: get_models() in BoltedCAD.py and WeldedCAD.py is not returning anything right now.        # Handle case where cadlist might be a single CAD object instead of a list
-        if cadlist:
-            # Check if cadlist is actually a list (has len method)
-            try:
-                if len(cadlist) > 1:
-                    final_model = cadlist[0]
-                    for model in cadlist[1:]:
-                        final_model = BRepAlgoAPI_Fuse(model, final_model).Shape()
-                elif len(cadlist) == 1:
-                    final_model = cadlist[0]
-            except TypeError:
-                # cadlist is not a list, it's a single CAD object
-                final_model = cadlist
+                    # cadlist = self.TObj.get_models() #TODO: get_models() in BoltedCAD.py and WeldedCAD.py is not returning anything right now.        if cadlist and isinstance(cadlist, list) and len(cadlist) > 1:
+            print("Creating final model by fusing multiple components")
+            print("CADLIST:", cadlist)
+            final_model = cadlist[0]
+            print("Final Model:", final_model)
+            for model in cadlist[1:]:
+                final_model = BRepAlgoAPI_Fuse(model, final_model).Shape()
+        elif cadlist and isinstance(cadlist, list) and len(cadlist) == 1:
+            final_model = cadlist[0]
 
         return final_model
 
@@ -2435,3 +2436,5 @@ class CommonDesignLogic(object):
 # if __name__!= "__main__":
 #
 #     CommonDesignLogic()
+
+
